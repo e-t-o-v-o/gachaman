@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aether Chronicles: Pop Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Space Grotesk"', 'sans-serif'],
+            },
+            colors: {
+              popBlack: '#1a1a1a',
+              popWhite: '#fdfdfd',
+              popPink: '#ff90e8',
+              popYellow: '#ffc900',
+              popBlue: '#23a6d5',
+              popGreen: '#00e054',
+              popRed: '#ff4d4d',
+            },
+            boxShadow: {
+              'brutal': '4px 4px 0px 0px #1a1a1a',
+              'brutal-lg': '8px 8px 0px 0px #1a1a1a',
+              'brutal-sm': '2px 2px 0px 0px #1a1a1a',
+            },
+            animation: {
+              'bounce-small': 'bounce 1s infinite',
+              'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
+              'shake-hard': 'shakeHard 0.4s cubic-bezier(.36,.07,.19,.97) both',
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'slide-up': 'slideUp 0.4s ease-out forwards',
+              'pop-in': 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+              'float': 'float 3s ease-in-out infinite',
+              'grid-scroll': 'gridScroll 2s linear infinite',
+              'particle-out': 'particleOut 0.6s ease-out forwards',
+              'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              shake: {
+                '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                '30%, 50%, 70%': { transform: 'translate3d(-2px, 0, 0)' },
+                '40%, 60%': { transform: 'translate3d(2px, 0, 0)' }
+              },
+              shakeHard: {
+                '0%, 100%': { transform: 'translate3d(0, 0, 0)' },
+                '10%, 30%, 50%, 70%, 90%': { transform: 'translate3d(-6px, 4px, 0)' },
+                '20%, 40%, 60%, 80%': { transform: 'translate3d(6px, -4px, 0)' }
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(100%)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              popIn: {
+                '0%': { transform: 'scale(0.5) rotate(-10deg)', opacity: '0' },
+                '100%': { transform: 'scale(1) rotate(0deg)', opacity: '1' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              gridScroll: {
+                '0%': { backgroundPosition: '0 0' },
+                '100%': { backgroundPosition: '0 40px' },
+              },
+              particleOut: {
+                '0%': { transform: 'translate(0, 0) scale(1)', opacity: '1' },
+                '100%': { transform: 'translate(var(--tx), var(--ty)) scale(0)', opacity: '0' },
+              }
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background-color: #fdfdfd;
+        color: #1a1a1a;
+        font-family: 'Space Grotesk', sans-serif;
+        overflow: hidden;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+        border-left: 2px solid #1a1a1a;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #1a1a1a; 
+        border: 2px solid #1a1a1a;
+        border-radius: 0;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #ff90e8; 
+      }
+      
+      .bg-grid {
+        background-size: 40px 40px;
+        background-image:
+          linear-gradient(to right, rgba(26, 26, 26, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(26, 26, 26, 0.05) 1px, transparent 1px);
+      }
+      
+      .bg-dots {
+        background-image: radial-gradient(#1a1a1a 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.1;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
