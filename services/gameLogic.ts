@@ -98,6 +98,100 @@ export const CAMPAIGN_STAGES: CampaignStage[] = [
     enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.LEGENDARY] },
     rewards: { gold: 20000, xp: 15000 },
     boss: true
+  },
+  // VOID SECTOR (HARD MODE)
+  {
+    id: 11,
+    name: "Void Gate",
+    description: "Unknown Sector. High Danger.",
+    recommendedLevel: 100,
+    recommendedCP: 100000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 25000, xp: 20000 }
+  },
+  {
+    id: 12,
+    name: "Null Pointer",
+    description: "Reality breaks down here.",
+    recommendedLevel: 110,
+    recommendedCP: 125000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 30000, xp: 25000 }
+  },
+  {
+    id: 13,
+    name: "Abyssal Plain",
+    description: "Endless darkness.",
+    recommendedLevel: 120,
+    recommendedCP: 150000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 35000, xp: 30000 },
+    boss: true
+  },
+  {
+    id: 14,
+    name: "Dead Sector",
+    description: "No signals return from here.",
+    recommendedLevel: 130,
+    recommendedCP: 180000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 40000, xp: 35000 }
+  },
+  {
+    id: 15,
+    name: "Entropy's Edge",
+    description: "Chaos reigns.",
+    recommendedLevel: 140,
+    recommendedCP: 220000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 50000, xp: 40000 },
+    boss: true
+  },
+  {
+    id: 16,
+    name: "The Glitch",
+    description: "System instability critical.",
+    recommendedLevel: 150,
+    recommendedCP: 260000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 60000, xp: 50000 }
+  },
+  {
+    id: 17,
+    name: "Code Breaker",
+    description: "The source code is exposed.",
+    recommendedLevel: 160,
+    recommendedCP: 300000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 70000, xp: 60000 }
+  },
+  {
+    id: 18,
+    name: "Zero Day",
+    description: "The first infection.",
+    recommendedLevel: 170,
+    recommendedCP: 350000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 80000, xp: 70000 }
+  },
+  {
+    id: 19,
+    name: "Event Horizon",
+    description: "Point of no return.",
+    recommendedLevel: 180,
+    recommendedCP: 400000,
+    enemies: { count: 3, rarityRange: [Rarity.LEGENDARY, Rarity.PROMO] },
+    rewards: { gold: 90000, xp: 80000 }
+  },
+  {
+    id: 20,
+    name: "THE END",
+    description: "Absolute Null.",
+    recommendedLevel: 200,
+    recommendedCP: 500000,
+    enemies: { count: 3, rarityRange: [Rarity.PROMO, Rarity.PROMO] },
+    rewards: { gold: 150000, xp: 100000 },
+    boss: true
   }
 ];
 
@@ -107,7 +201,11 @@ const getXpForNextLevel = (level: number) => Math.floor(100 * Math.pow(1.15, lev
 export const calculateBaseStats = (rarity: Rarity, level: number, rank: number, role?: CharacterRole): CharacterStats => {
   const rarityMult = rarity === Rarity.PROMO ? 2.5 : rarity === Rarity.LEGENDARY ? 2.0 : rarity === Rarity.RARE ? 1.5 : 1.0;
   const rankMult = 1 + ((rank - 1) * 0.05); // 5% per rank
-  const levelMult = 1 + ((level - 1) * 0.1); // 10% per level
+  
+  // Growth Logic: ATK scales faster than DEF to ensure battles end
+  const hpLevelMult = 1 + ((level - 1) * 0.10);
+  const atkLevelMult = 1 + ((level - 1) * 0.12); // Higher scaling
+  const defLevelMult = 1 + ((level - 1) * 0.08); // Lower scaling
 
   let baseHp = 1000 * rarityMult;
   let baseAtk = 100 * rarityMult;
@@ -116,9 +214,9 @@ export const calculateBaseStats = (rarity: Rarity, level: number, rank: number, 
 
   // Class Multipliers
   if (role === 'VANGUARD') {
-      baseHp *= 1.4;
-      baseDef *= 1.3;
-      baseAtk *= 0.8;
+      baseHp *= 1.6; // Higher base HP
+      baseDef *= 1.5; // Higher base DEF
+      baseAtk *= 0.7; // Lower ATK
       baseSpeed *= 0.9;
   } else if (role === 'DUELIST') {
       baseAtk *= 1.3;
@@ -126,7 +224,7 @@ export const calculateBaseStats = (rarity: Rarity, level: number, rank: number, 
       baseHp *= 0.9;
   } else if (role === 'OPERATOR') {
       baseSpeed *= 1.15; // Fast to heal
-      baseAtk *= 0.7; // Healing scales with ATK usually, but lower base
+      baseAtk *= 0.7; 
   } else if (role === 'DEADEYE') {
       baseAtk *= 1.4;
       baseSpeed *= 0.8;
@@ -134,10 +232,10 @@ export const calculateBaseStats = (rarity: Rarity, level: number, rank: number, 
   }
 
   return {
-    hp: Math.floor(baseHp * levelMult * rankMult),
-    maxHp: Math.floor(baseHp * levelMult * rankMult),
-    atk: Math.floor(baseAtk * levelMult * rankMult),
-    def: Math.floor(baseDef * levelMult * rankMult),
+    hp: Math.floor(baseHp * hpLevelMult * rankMult),
+    maxHp: Math.floor(baseHp * hpLevelMult * rankMult),
+    atk: Math.floor(baseAtk * atkLevelMult * rankMult),
+    def: Math.floor(baseDef * defLevelMult * rankMult),
     speed: Math.floor(baseSpeed + (level * 0.5)),
     critRate: 5 + ((rank - 1) * 1) + (role === 'DEADEYE' ? 10 : 0),
     critDmg: 150 + (role === 'DUELIST' ? 20 : 0),
@@ -183,6 +281,11 @@ export const calculateComputedStats = (character: Character, inventory: Inventor
             stats.atk += weapon.stats.atk;
             stats.critRate += weapon.stats.critRate;
             stats.armorPen += (weapon.stats.armorPen || 0);
+            
+            // Add Bonus Stat
+            if (weapon.bonusStat) {
+                stats[weapon.bonusStat.type] += weapon.bonusStat.value;
+            }
         }
     }
   }
@@ -206,8 +309,6 @@ export const calculateComputedStats = (character: Character, inventory: Inventor
           if (type === 'speed' || type === 'critRate' || type === 'evasion' || type === 'accuracy' || type === 'armorPen') {
                stats[type] += cosmetic.statBonus.value; 
           } else {
-               // For scaling stats like ATK/HP, treat value as percentage of base if needed, but for now flat is simpler.
-               // Let's assume high flat values generated
                stats[type] += cosmetic.statBonus.value;
           }
       }
@@ -309,21 +410,23 @@ export const createEnemy = (stageLevel: number, isBoss: boolean = false): Battle
     if (role === 'VANGUARD') maxStability = 3;
     if (isBoss) maxStability = 5;
 
+    const isHardMode = stageLevel > 10;
+
     return {
         id,
-        name: isBoss ? `BOSS: ${arch.name}` : `${arch.name} v${stageLevel}`,
+        name: isBoss ? `BOSS: ${arch.name}` : `${isHardMode ? 'VOID' : ''} ${arch.name} v${stageLevel}`,
         title: arch.role,
         role: role,
         description: 'Hostile Entity',
-        rarity,
+        rarity: isHardMode ? Rarity.LEGENDARY : rarity,
         element: el,
         level: stageLevel,
         xp: 0,
         maxXp: 0,
         rank: 1,
-        stats,
-        computedStats: stats,
-        imageUrl: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${arch.avatarSeed}${id}&backgroundColor=${isBoss ? 'ff0000' : 'transparent'}`,
+        stats: isHardMode ? { ...stats, hp: Math.floor(stats.hp * 1.5), atk: Math.floor(stats.atk * 1.3) } : stats,
+        computedStats: isHardMode ? { ...stats, hp: Math.floor(stats.hp * 1.5), atk: Math.floor(stats.atk * 1.3) } : stats,
+        imageUrl: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${arch.avatarSeed}${id}&backgroundColor=${isBoss ? 'ff0000' : isHardMode ? '4b0082' : 'transparent'}`,
         skills: {
             normal: { name: arch.skills.normal, description: 'Attack', multiplier: 1, cooldown: 0 },
             skill: { name: arch.skills.skill, description: 'Skill', multiplier: 1.2, cooldown: 3, isAOE: arch.role === 'Boss' },
@@ -337,7 +440,9 @@ export const createEnemy = (stageLevel: number, isBoss: boolean = false): Battle
         cooldowns: { skill: 0, ultimate: 0 },
         stability: maxStability,
         maxStability,
-        isStunned: false
+        isStunned: false,
+        consecutiveStuns: 0,
+        isImmuneToBreak: role === 'VANGUARD' // Vanguards are unbreakable by default
     };
 };
 
@@ -384,8 +489,14 @@ export const calculateDamage = (attacker: BattleUnit, defender: BattleUnit, skil
     if (elementMult > 1) type = 'weak';
     if (elementMult < 1) type = 'resist';
 
+    // Stability Damage
     let stabilityDamage = elementMult > 1 ? 2 : 1;
     if (isCrit) stabilityDamage += 0.5;
+    
+    // Vanguards take 0 stability damage (Unbreakable)
+    if (defender.role === 'VANGUARD') {
+        stabilityDamage = 0;
+    }
 
     const overloadMult = defender.isStunned ? 1.5 : 1.0;
 
@@ -393,13 +504,39 @@ export const calculateDamage = (attacker: BattleUnit, defender: BattleUnit, skil
     const pen = attacker.computedStats?.armorPen || 0;
     const effectiveDef = Math.max(0, def * (1 - (pen / 100)));
     
-    const defMitigation = 100 / (100 + effectiveDef);
+    // Improved Mitigation Formula: Scales linearly with level roughly
+    const defMitigation = 200 / (200 + effectiveDef); // Softer curve
     
     let rawDamage = attacker.computedStats.atk * skill.multiplier * critMult * elementMult * overloadMult;
     let finalDamage = Math.floor(rawDamage * defMitigation);
+    
+    // Minimum damage rule (5% of raw)
+    finalDamage = Math.max(Math.floor(rawDamage * 0.05), finalDamage);
     finalDamage = Math.max(1, finalDamage); 
 
     return { damage: finalDamage, isCrit, type, stabilityDamage };
+};
+
+// Helper for random weapon variance
+const applyVariance = (base: number) => {
+    const factor = 0.85 + Math.random() * 0.3; // 0.85 to 1.15
+    return Math.floor(base * factor);
+};
+
+// Helper for weapon bonus stat
+const generateBonusStat = (rarity: Rarity): { type: keyof CharacterStats, value: number } | undefined => {
+    if (rarity === Rarity.COMMON) return undefined;
+    
+    const possibleStats: (keyof CharacterStats)[] = ['speed', 'hp', 'accuracy', 'evasion'];
+    const type = possibleStats[Math.floor(Math.random() * possibleStats.length)];
+    
+    let value = 0;
+    if (type === 'speed') value = 2 + (rarity * 1);
+    if (type === 'hp') value = 100 + (rarity * 50);
+    if (type === 'accuracy') value = 5 + (rarity * 2);
+    if (type === 'evasion') value = 2 + (rarity * 1);
+
+    return { type, value };
 };
 
 export const calculateBattleRewards = (stageId: number): BattleRewards => {
@@ -424,6 +561,8 @@ export const calculateBattleRewards = (stageId: number): BattleRewards => {
         const id = crypto.randomUUID();
 
         if (typeRoll < 0.6) {
+             const baseAtk = 15 * rarity;
+             const baseCrit = rarity;
              newItem = {
                  id,
                  name: `Dropped Weapon`,
@@ -432,7 +571,12 @@ export const calculateBattleRewards = (stageId: number): BattleRewards => {
                  description: "Salvaged from battle",
                  level: 1, xp: 0, maxXp: 100, rank: 1, value: 50,
                  isNew: true,
-                 stats: { atk: 15 * rarity, critRate: rarity, armorPen: 0 }
+                 stats: { 
+                     atk: applyVariance(baseAtk), 
+                     critRate: baseCrit, 
+                     armorPen: 0 
+                 },
+                 bonusStat: generateBonusStat(rarity)
              } as Weapon;
         } else {
              newItem = {
@@ -459,14 +603,21 @@ export const generateQuests = (count: number): Quest[] => {
 
     for (let i = 0; i < count; i++) {
         const duration = 60 + Math.floor(Math.random() * 300); // 1-6 mins
+        
+        // Balanced rewards logic
+        // Gold: ~5 per second of duration (300g - 1800g)
+        const baseGold = Math.floor(duration * 5); 
+        // Gems: Rare chance (10%)
+        const gems = Math.random() > 0.9 ? 10 : 0;
+
         quests.push({
             id: crypto.randomUUID(),
             title: titles[Math.floor(Math.random() * titles.length)],
             description: "Complete the objective to earn rewards.",
             duration,
             reward: {
-                gold: 100 + Math.floor(Math.random() * 200),
-                gems: Math.random() > 0.8 ? 10 : 0
+                gold: baseGold + Math.floor(Math.random() * 100),
+                gems
             },
             requirements: {
                 partySize: 1 + Math.floor(Math.random() * 2), // 1-3
@@ -495,45 +646,62 @@ export const refreshShop = (hasBoughtFirstGold: boolean): ShopItem[] => {
     }
     
     // Featured Item Logic
-    const rRoll = Math.random();
-    let featuredItem: ShopItem;
-
     if (hasBoughtFirstGold) {
-        if (rRoll > 0.98) { // 2% chance for Legendary Featured (Was 5-10%)
-            featuredItem = {
+        const goldRoll = Math.random();
+        
+        // 5% Chance for Gold Resource (Incredibly Rare)
+        if (goldRoll > 0.95) {
+            const amount = 5000;
+            items.push({
                 id: crypto.randomUUID(),
-                item: { type: 'resource', resource: 'gold', amount: 50000 },
-                cost: 1500, // True Legendary Price
+                item: { type: 'resource', resource: 'gold', amount: amount },
+                cost: amount, // 1:1 Ratio (Very Expensive, 5000 Gems for 5000 Gold)
                 currency: 'gems',
                 soldOut: false
-            };
-        } else if (rRoll > 0.8) { // 18% Epic
-             featuredItem = {
-                id: crypto.randomUUID(),
-                item: { type: 'resource', resource: 'gold', amount: 20000 },
-                cost: 800, 
-                currency: 'gems',
-                soldOut: false
-            };
+            });
         } else {
-             // Mostly Rare/Common deals
-             featuredItem = {
+            // 95% Chance for Legendary Equipment (Replace generic gold spawn with cool items)
+            const isChip = Math.random() > 0.5;
+            let featuredItemContent: InventoryItem;
+            const rarity = Rarity.LEGENDARY;
+            
+            if (isChip) {
+                 featuredItemContent = {
+                     id: crypto.randomUUID(),
+                     name: "Omegabyte Chip",
+                     type: 'chip',
+                     rarity,
+                     description: "Top of the line processing unit.",
+                     level: 1, xp: 0, maxXp: 100, rank: 1, value: 0,
+                     mainStat: { type: 'critRate', value: 20 },
+                     isNew: false
+                 } as ModChip;
+            } else {
+                 featuredItemContent = {
+                     id: crypto.randomUUID(),
+                     name: "Apex Predator",
+                     type: 'weapon',
+                     rarity,
+                     description: "Banned in 12 systems.",
+                     level: 1, xp: 0, maxXp: 100, rank: 1, value: 0,
+                     stats: { 
+                         atk: applyVariance(150), 
+                         critRate: 20, 
+                         armorPen: 25 
+                     },
+                     bonusStat: { type: 'speed', value: 15 },
+                     isNew: false
+                 } as Weapon;
+            }
+
+            items.push({
                 id: crypto.randomUUID(),
-                item: { type: 'resource', resource: 'gold', amount: 5000 },
-                cost: 200, 
+                item: featuredItemContent,
+                cost: 1500, // Standard Legendary Price
                 currency: 'gems',
                 soldOut: false
-            };
+            });
         }
-        items.push(featuredItem);
-    } else {
-        items.push({
-            id: crypto.randomUUID(),
-            item: { type: 'resource', resource: 'gold', amount: 5000 },
-            cost: 200, 
-            currency: 'gems',
-            soldOut: false
-        });
     }
 
     // Random Items Logic
@@ -548,6 +716,9 @@ export const refreshShop = (hasBoughtFirstGold: boolean): ShopItem[] => {
         // Weapon Generation
         if (typeRoll < 0.4) {
              const isHealerWeapon = Math.random() < 0.1;
+             const baseAtk = (isHealerWeapon ? 10 : 30) * rarity;
+             const baseCrit = isHealerWeapon ? 0 : 2 * rarity;
+             
              item = {
                  id: crypto.randomUUID(),
                  name: rarity === Rarity.LEGENDARY ? (isHealerWeapon ? "Nanite Injector" : "Prototype Railgun") : "Standard Rifle",
@@ -557,10 +728,11 @@ export const refreshShop = (hasBoughtFirstGold: boolean): ShopItem[] => {
                  level: 1, xp: 0, maxXp: 100, rank: 1, value: 0,
                  restrictedRole: isHealerWeapon ? 'OPERATOR' : undefined,
                  stats: { 
-                     atk: (isHealerWeapon ? 10 : 30) * rarity, 
-                     critRate: isHealerWeapon ? 0 : rarity * 2, 
+                     atk: applyVariance(baseAtk), 
+                     critRate: baseCrit, 
                      armorPen: rarity === Rarity.LEGENDARY ? 10 : 0 
-                 }
+                 },
+                 bonusStat: generateBonusStat(rarity)
              } as Weapon;
         } else if (typeRoll < 0.7) {
             // Chip
@@ -574,7 +746,7 @@ export const refreshShop = (hasBoughtFirstGold: boolean): ShopItem[] => {
                  mainStat: { type: 'atk', value: 8 * rarity }
              } as ModChip;
         } else {
-             // Cosmetics - Now more valuable
+             // Cosmetics
              const styles = ['bg-gradient-to-r from-pink-500 to-yellow-500', 'bg-gradient-to-br from-blue-400 to-green-300', 'bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-700 via-gray-900 to-black', 'bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-yellow-200 via-emerald-200 to-yellow-200'];
              item = {
                  id: crypto.randomUUID(),
@@ -584,7 +756,7 @@ export const refreshShop = (hasBoughtFirstGold: boolean): ShopItem[] => {
                  description: "Visual Upgrade",
                  level: 1, xp: 0, maxXp: 100, rank: 1, value: 0,
                  style: styles[Math.floor(Math.random() * styles.length)],
-                 statBonus: { type: 'speed', value: 5 * rarity } // +5 speed per rarity
+                 statBonus: { type: 'speed', value: 5 * rarity } 
              } as Cosmetic;
         }
 
@@ -671,12 +843,31 @@ export const ETOVO_CHAR: Character = {
     rarity: Rarity.PROMO,
     element: ElementType.ELECTRO,
     level: 1, xp: 0, maxXp: 100, rank: 1, value: 0,
-    imageUrl: 'https://imgur.com/a/haMSNhS', // Fallback handled in component if broken
+    imageUrl: 'https://i.imgur.com/3PwXMZ4.png', 
     stats: calculateBaseStats(Rarity.PROMO, 1, 1, 'DEADEYE'),
     skills: {
         normal: { name: 'Syntax Error', description: 'Deals randomized damage.', multiplier: 1.2, cooldown: 0 },
         skill: { name: 'Code Inject', description: 'Massive AOE Damage.', multiplier: 2.0, cooldown: 3, isAOE: true },
         ultimate: { name: 'SYSTEM RESET', description: 'Obliterates all enemies.', multiplier: 5.0, cooldown: 5, isAOE: true }
+    }
+};
+
+export const ALIEN_ETOVO_CHAR: Character = {
+    id: 'alien-etovo-promo',
+    type: 'character',
+    name: 'Alien Etovo',
+    title: 'Cosmic Host',
+    role: 'VANGUARD',
+    description: 'The original Etovo, consumed and repurposed by the hive mind.',
+    rarity: Rarity.PROMO,
+    element: ElementType.DENDRO,
+    level: 1, xp: 0, maxXp: 100, rank: 1, value: 0,
+    imageUrl: 'https://i.imgur.com/TDEHUTq.png',
+    stats: calculateBaseStats(Rarity.PROMO, 1, 1, 'VANGUARD'),
+    skills: {
+        normal: { name: 'Probe', description: 'Drains HP from target.', multiplier: 1.0, cooldown: 0 },
+        skill: { name: 'Mind Control', description: 'Deals heavy psychic damage.', multiplier: 1.5, cooldown: 4, isAOE: false },
+        ultimate: { name: 'ABDUCTION', description: 'Massive damage + Self Heal.', multiplier: 3.5, cooldown: 6, isHeal: true, isAOE: true }
     }
 };
 
@@ -752,17 +943,21 @@ export const performPull = async (pityCounter: number): Promise<{ item: Inventor
       };
   } else if (type === 'weapon') {
       const lore = await generateWeaponLore(rarity);
-      const isHealer = Math.random() < 0.1; // 10% chance for Healer weapon
+      const isHealer = Math.random() < 0.1; 
+      const baseAtk = (isHealer ? 10 : 50) * rarity;
+      const baseCrit = isHealer ? 0 : 2 * rarity;
+
       newItem = {
           ...newItem,
           name: isHealer ? "Medi-System" : lore.name,
           description: isHealer ? "Life support gear." : lore.description,
           restrictedRole: isHealer ? 'OPERATOR' : undefined,
           stats: {
-              atk: (isHealer ? 10 : 50) * rarity,
-              critRate: isHealer ? 0 : 2 * rarity,
+              atk: applyVariance(baseAtk),
+              critRate: baseCrit,
               armorPen: 0
-          }
+          },
+          bonusStat: generateBonusStat(rarity)
       };
   } else if (type === 'chip') {
       const statsKeys: (keyof CharacterStats)[] = ['atk', 'def', 'speed', 'critRate', 'maxHp'];
@@ -774,7 +969,7 @@ export const performPull = async (pityCounter: number): Promise<{ item: Inventor
           mainStat: { type: mainStat, value: 10 * rarity },
       };
   } else {
-      const styles = ['bg-gradient-to-r from-pink-500 to-yellow-500', 'bg-gradient-to-br from-blue-400 to-green-300', 'bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-700 via-gray-900 to-black'];
+      const styles = ['bg-gradient-to-r from-pink-500 to-yellow-500', 'bg-gradient-to-br from-blue-400 to-green-300', 'bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gray-700 via-gray-900 to-black', 'bg-[conic-gradient(at_top,_var(--tw-gradient-stops))] from-yellow-200 via-emerald-200 to-yellow-200'];
       newItem = {
           ...newItem,
           name: "Street Style",

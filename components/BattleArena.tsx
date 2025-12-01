@@ -33,6 +33,9 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
   const logsEndRef = useRef<HTMLDivElement>(null);
   const unitsRef = useRef<BattleUnit[]>([]); // To keep track of latest units state in async calls
 
+  // HARD MODE CHECK
+  const isHardMode = campaignStage > 10;
+
   useEffect(() => {
     unitsRef.current = units;
   }, [units]);
@@ -41,7 +44,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
   useEffect(() => {
     if (battleStarted) return;
     
-    const isBossStage = campaignStage === 3 || campaignStage === 5 || campaignStage === 7 || campaignStage === 10; 
+    const isBossStage = campaignStage === 3 || campaignStage === 5 || campaignStage === 7 || campaignStage === 10 || campaignStage === 13 || campaignStage === 15 || campaignStage === 20; 
 
     const enemies = [createEnemy(campaignStage, isBossStage && Math.random() < 0.33), createEnemy(campaignStage), createEnemy(campaignStage)];
     if (isBossStage) {
@@ -58,7 +61,9 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
         cooldowns: { skill: 0, ultimate: 0 },
         stability: 2, // Base stability
         maxStability: 2,
-        isStunned: false
+        isStunned: false,
+        consecutiveStuns: 0,
+        isImmuneToBreak: c.role === 'VANGUARD' // Vanguards spawn immune
     }));
     const enemyUnits = enemies.map(c => ({ 
         ...c, 
@@ -200,21 +205,22 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
     if (actionType === 'skill') skill = attacker.skills.skill;
     if (actionType === 'ultimate') skill = attacker.skills.ultimate;
 
-    // Apply Cooldown (Self)
-    if (!attacker.isEnemy) {
-        setUnits(prev => prev.map(u => {
-            if (u.id === attacker.id) {
-                return {
-                    ...u,
-                    cooldowns: {
-                        skill: actionType === 'skill' ? skill.cooldown : u.cooldowns.skill,
-                        ultimate: actionType === 'ultimate' ? skill.cooldown : u.cooldowns.ultimate
-                    }
-                };
-            }
-            return u;
-        }));
-    }
+    // Apply Cooldown (Self) & Reset Immunity because they took an action
+    setUnits(prev => prev.map(u => {
+        if (u.id === attacker.id) {
+            return {
+                ...u,
+                consecutiveStuns: 0, // Reset counter
+                // Vanguards NEVER lose immunity
+                isImmuneToBreak: u.role === 'VANGUARD' ? true : false, 
+                cooldowns: {
+                    skill: actionType === 'skill' ? skill.cooldown : u.cooldowns.skill,
+                    ultimate: actionType === 'ultimate' ? skill.cooldown : u.cooldowns.ultimate
+                }
+            };
+        }
+        return u;
+    }));
 
     addLog(`${attacker.name} uses ${skill.name}`, 'info');
 
@@ -265,26 +271,43 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
                 if (type === 'heal') {
                     return { ...u, stats: { ...u.stats, hp: Math.min(u.stats.maxHp, u.stats.hp + damage) } };
                 } else {
-                    // Reduce Stability
-                    let newStability = u.stability - stabilityDamage;
+                    // Reduce Stability Logic
+                    let newStability = u.stability;
                     let justStunned = false;
+                    let newStunCount = u.consecutiveStuns;
+                    let triggerImmunity = u.isImmuneToBreak;
 
-                    if (!u.isStunned && newStability <= 0) {
-                        newStability = 0;
-                        justStunned = true;
-                    } else if (newStability < 0) {
-                        newStability = 0;
+                    // Unbreakable Logic: Vanguards ignore stability damage
+                    if (u.role === 'VANGUARD') {
+                        triggerImmunity = true;
+                    } else if (!u.isImmuneToBreak) {
+                        newStability = u.stability - stabilityDamage;
+                        if (!u.isStunned && newStability <= 0) {
+                            newStability = 0;
+                            justStunned = true;
+                            newStunCount = u.consecutiveStuns + 1;
+                            if (newStunCount >= 3) {
+                                triggerImmunity = true;
+                            }
+                        } else if (newStability < 0) {
+                            newStability = 0;
+                        }
                     }
 
                     if (justStunned) {
                         addPopup(u.id, "BREAK!", 0, -20, 'crit');
                         addLog(`${u.name} Stance Broken!`, 'info');
+                        if (triggerImmunity) {
+                            setTimeout(() => addPopup(u.id, "IMMUNE!", 0, -40, 'heal'), 500);
+                        }
                     }
 
                     return { 
                         ...u, 
                         stability: newStability,
                         isStunned: u.isStunned || justStunned,
+                        consecutiveStuns: newStunCount,
+                        isImmuneToBreak: triggerImmunity,
                         stats: { ...u.stats, hp: Math.max(0, u.stats.hp - damage) } 
                     };
                 }
@@ -352,12 +375,13 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
                           <h3 className="text-2xl font-black text-white italic uppercase">{inspectUnit.name}</h3>
                           <div className="text-popBlue font-bold">Lvl {inspectUnit.level} {inspectUnit.element}</div>
                           <div className="text-sm text-gray-400 font-mono mt-1">{inspectUnit.role}</div>
+                          {inspectUnit.isImmuneToBreak && <div className="text-xs bg-yellow-500 text-black px-1 font-bold mt-1 inline-block">UNBREAKABLE</div>}
                       </div>
                   </div>
                   
                   <div className="space-y-2 bg-black/50 p-4 border border-gray-700 font-mono text-sm text-gray-300">
                       <div className="flex justify-between"><span>HP</span> <span className="text-white">{inspectUnit.stats.hp}/{inspectUnit.stats.maxHp}</span></div>
-                      <div className="flex justify-between"><span>STABILITY</span> <span className="text-cyan-400">{inspectUnit.stability}/{inspectUnit.maxStability}</span></div>
+                      <div className="flex justify-between"><span>STABILITY</span> <span className="text-cyan-400">{inspectUnit.isImmuneToBreak ? 'INF' : `${inspectUnit.stability}/${inspectUnit.maxStability}`}</span></div>
                       <div className="h-px bg-gray-700 my-2"></div>
                       <div className="flex justify-between"><span>ATK</span> <span className="text-white">{inspectUnit.computedStats?.atk || inspectUnit.stats.atk}</span></div>
                       <div className="flex justify-between"><span>DEF</span> <span className="text-white">{inspectUnit.computedStats?.def || inspectUnit.stats.def}</span></div>
@@ -386,9 +410,9 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
       {renderInspectModal()}
       
       {/* Environment */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#050505] to-[#050505] animate-pulse-fast"></div>
+      <div className={`absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] ${isHardMode ? 'from-purple-900/40 via-red-900/10 to-[#050505]' : 'from-blue-900/20 via-[#050505] to-[#050505]'} animate-pulse-fast`}></div>
       <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-end justify-center perspective-[500px]">
-          <div className="w-[200%] h-[100%] bg-[linear-gradient(to_bottom,transparent_0%,rgba(35,166,213,0.1)_100%),linear-gradient(to_right,rgba(35,166,213,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(35,166,213,0.1)_1px,transparent_1px)] bg-[length:40px_40px] transform rotate-x-[60deg] origin-bottom opacity-40 animate-grid-scroll"></div>
+          <div className={`w-[200%] h-[100%] bg-[linear-gradient(to_bottom,transparent_0%,${isHardMode ? 'rgba(255,0,0,0.1)' : 'rgba(35,166,213,0.1)'}_100%),linear-gradient(to_right,${isHardMode ? 'rgba(255,0,0,0.1)' : 'rgba(35,166,213,0.1)'}_1px,transparent_1px),linear-gradient(to_bottom,${isHardMode ? 'rgba(255,0,0,0.1)' : 'rgba(35,166,213,0.1)'}_1px,transparent_1px)] bg-[length:40px_40px] transform rotate-x-[60deg] origin-bottom opacity-40 animate-grid-scroll`}></div>
       </div>
 
       {/* Turn Timeline */}
@@ -412,20 +436,28 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
       <div className="flex-1 flex flex-col md:flex-row justify-between items-center px-4 md:px-20 relative z-20 w-full max-w-7xl mx-auto py-4 gap-4 md:gap-0 perspective-[1000px]">
         {/* Allies */}
         <div className="flex flex-col gap-2 md:gap-4 w-full md:w-1/3 order-2 md:order-1 transform md:rotate-y-[10deg] mb-20 md:mb-0">
-          {units.filter(u => !u.isEnemy).map(u => (
-             <div key={u.id} onClick={() => setInspectUnit(u)} className={`transition-all duration-500 cursor-pointer ${u.id === currentUnitId ? 'scale-105 z-30' : 'opacity-90 grayscale-[0.3] hover:opacity-100'}`}>
-                <Platform>
+          {units.filter(u => !u.isEnemy).map(u => {
+             const isHeal = selectedAction && currentUnit && (
+                 (selectedAction === 'skill' && currentUnit.skills.skill.isHeal) || 
+                 (selectedAction === 'ultimate' && currentUnit.skills.ultimate.isHeal)
+             );
+             const isTargetable = isHeal && isPlayerTurn && u.stats.hp > 0;
+
+             return (
+             <div key={u.id} onClick={() => handleTargetClick(u)} className={`transition-all duration-500 ${isTargetable ? "cursor-crosshair scale-105" : "cursor-pointer"} ${u.id === currentUnitId ? 'scale-105 z-30' : 'opacity-90 grayscale-[0.3] hover:opacity-100'}`}>
+                <Platform isEnemy={false} isHardMode={isHardMode}>
                     <UnitCard 
                         unit={u} 
                         isActive={u.id === currentUnitId}
                         isAttacking={u.id === activeAttackerId}
+                        isTargetable={!!isTargetable}
                         popups={popups}
                         effect={visualEffects[u.id] || null}
                         roleIcon={getRoleIcon(u.role)}
                     />
                 </Platform>
              </div>
-          ))}
+          )})}
         </div>
 
         {/* Enemies */}
@@ -440,7 +472,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
              
              return (
              <div key={u.id} onClick={() => handleTargetClick(u)} className={`w-full transition-all duration-500 ${isTargetable ? "cursor-crosshair scale-105" : "cursor-help"} ${u.id === currentUnitId ? 'z-30' : ''}`}>
-                 <Platform isEnemy>
+                 <Platform isEnemy isHardMode={isHardMode}>
                      <UnitCard 
                         unit={u} 
                         isActive={u.id === currentUnitId}
@@ -517,10 +549,13 @@ const BattleArena: React.FC<BattleArenaProps> = ({ myTeam, inventory, campaignSt
 };
 
 // ... Platform and ParticleBurst components ...
-const Platform = ({ children, isEnemy }: any) => (
+const Platform = ({ children, isEnemy, isHardMode }: any) => (
     <div className="relative group">
         <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-4 bg-black/50 blur-md rounded-[100%] transform translate-y-2 group-hover:scale-110 transition-transform`}></div>
-        <div className={`absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-full h-8 opacity-20 border-2 ${isEnemy ? 'border-popRed bg-popRed/20' : 'border-popBlue bg-popBlue/20'} transform skew-x-[-20deg]`}></div>
+        <div className={`
+            absolute bottom-[-10px] left-1/2 -translate-x-1/2 w-full h-8 opacity-20 border-2 transform skew-x-[-20deg]
+            ${isEnemy ? (isHardMode ? 'border-purple-500 bg-purple-500/20' : 'border-popRed bg-popRed/20') : 'border-popBlue bg-popBlue/20'}
+        `}></div>
         {children}
     </div>
 );
@@ -665,7 +700,8 @@ const UnitCard: React.FC<{
                         </div>
                         {/* Stability Bar */}
                         <div className="h-1 w-full bg-gray-900 rounded-full overflow-hidden relative border border-gray-800 mb-0.5">
-                             <div className={`h-full transition-all duration-300 bg-cyan-400 shadow-[0_0_5px_cyan]`} style={{ width: `${stabilityPercent}%` }}></div>
+                             <div className={`h-full transition-all duration-300 ${unit.isImmuneToBreak ? 'bg-yellow-500 striped-bar' : 'bg-cyan-400 shadow-[0_0_5px_cyan]'}`} style={{ width: `${unit.isImmuneToBreak ? 100 : stabilityPercent}%` }}></div>
+                             {unit.isImmuneToBreak && <div className="absolute inset-0 flex items-center justify-center text-[6px] font-black text-black">SHIELDED</div>}
                         </div>
                         
                         <div className={`text-[8px] font-mono text-gray-400 flex justify-between ${unit.isEnemy ? 'flex-row-reverse' : ''}`}>

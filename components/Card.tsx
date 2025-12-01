@@ -10,11 +10,12 @@ interface CardProps {
   small?: boolean;
   showStats?: boolean;
   bgOverride?: string;
+  equippedBy?: string; // New prop to show ownership
 }
 
 const getRarityColor = (rarity: Rarity) => {
   switch (rarity) {
-    case Rarity.PROMO: return 'bg-[linear-gradient(45deg,#ff0000,#ff7300,#fffb00,#48ff00,#00ffd5,#002bff,#7a00ff,#ff00c8,#ff0000)] bg-[length:400%_400%] animate-gradient text-white';
+    case Rarity.PROMO: return 'bg-yellow-500 text-black'; // Gold/Black for high contrast on dark card
     case Rarity.LEGENDARY: return 'bg-popYellow text-popBlack';
     case Rarity.RARE: return 'bg-popPink text-white';
     default: return 'bg-popBlue text-white';
@@ -41,7 +42,7 @@ const getRoleIcon = (role?: string) => {
     }
 }
 
-const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, showStats, bgOverride }) => {
+const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, showStats, bgOverride, equippedBy }) => {
   const headerColor = getRarityColor(item.rarity);
   const isPromo = item.rarity === Rarity.PROMO;
   
@@ -56,13 +57,37 @@ const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, 
                 <img 
                     src={item.imageUrl} 
                     alt={item.name} 
-                    className={`w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ${isPromo ? 'filter contrast-125 saturate-150' : ''}`}
+                    className={`w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 z-10 relative`}
                     onError={(e) => {
                         // Fallback for broken images (e.g. broken Imgur link)
                         (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/adventurer/svg?seed=${item.name}&backgroundColor=000000`;
                     }}
                 />
-                {isPromo && <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity mix-blend-overlay animate-pulse"></div>}
+                
+                {/* PROMO HOLOGRAPHIC FX LAYER (VOID COSMIC) */}
+                {isPromo && (
+                    <>
+                        {/* Star Noise Texture */}
+                        <div 
+                            className="absolute inset-0 pointer-events-none z-0 opacity-40 mix-blend-overlay"
+                            style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")`
+                            }}
+                        />
+                        
+                        {/* Prismatic Sheen - Subtle rainbow moving across the darkness */}
+                        <div 
+                            className="absolute inset-0 pointer-events-none z-20 mix-blend-color-dodge opacity-30 animate-holo-sheen"
+                            style={{
+                                background: 'linear-gradient(115deg, transparent 35%, rgba(0,255,255,0.5) 45%, rgba(255,0,255,0.5) 55%, transparent 65%)',
+                                backgroundSize: '300% 300%'
+                            }}
+                        />
+
+                        {/* Dark Vignette for depth */}
+                        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.8)_100%)]" />
+                    </>
+                )}
              </>
           );
       } else if (item.type === 'weapon') {
@@ -114,9 +139,12 @@ const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, 
       }
       if (item.type === 'weapon' && showStats && !small && item.stats) {
           return (
-            <div className="mt-3 flex gap-2 text-[10px] font-bold text-gray-600 bg-gray-100 p-1 rounded border border-gray-200">
-                <div className="flex items-center gap-1"><Sword size={10} className="text-popRed"/> +{item.stats.atk}</div>
-                <div className="flex items-center gap-1"><Crosshair size={10} className="text-popBlue"/> +{item.stats.critRate}%</div>
+            <div className="mt-3 flex flex-col gap-1 text-[10px] font-bold text-gray-600 bg-gray-100 p-1 rounded border border-gray-200">
+                <div className="flex items-center gap-1"><Sword size={10} className="text-popRed"/> +{item.stats.atk} ATK</div>
+                <div className="flex items-center gap-1"><Crosshair size={10} className="text-popBlue"/> +{item.stats.critRate}% CRIT</div>
+                {item.bonusStat && (
+                    <div className="flex items-center gap-1 text-popGreen">+ {item.bonusStat.value} {item.bonusStat.type.toUpperCase()}</div>
+                )}
             </div>
           );
       }
@@ -130,7 +158,6 @@ const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, 
       return null;
   };
 
-  // If item is character and has bgOverride, use it. But handle Tailwind class overrides correctly.
   const containerStyle: React.CSSProperties = {};
   let backgroundClass = 'bg-gray-50';
   
@@ -141,8 +168,10 @@ const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, 
           containerStyle.background = bgOverride;
       }
   } else if (item.type === 'character' && item.equippedBackgroundId) {
-      // The parent usually passes bgOverride, but fallback just in case
       backgroundClass = 'bg-transparent'; 
+  } else if (isPromo) {
+      // Default Promo Background if no cosmetic
+      backgroundClass = 'bg-gradient-to-b from-gray-900 via-purple-900 to-black';
   }
 
   return (
@@ -151,27 +180,30 @@ const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, 
       className={`
         relative group cursor-pointer transition-all duration-300
         ${small ? 'aspect-[3/4] min-w-[80px]' : 'aspect-[3/5] w-full max-w-[208px]'} 
-        bg-white border-2 
-        ${isPromo ? 'border-transparent shadow-[0_0_15px_rgba(0,255,255,0.5)] ring-2 ring-transparent bg-origin-border' : 'border-popBlack'}
-        ${selected ? 'shadow-brutal-lg -translate-y-2 ring-2 ring-offset-2 ring-popBlack' : 'shadow-brutal hover:-translate-y-1 hover:shadow-brutal-lg'}
         flex flex-col overflow-hidden rounded-lg
+        ${isPromo ? 'shadow-lg hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]' : `bg-white border-2 border-popBlack ${selected ? 'shadow-brutal-lg -translate-y-2 ring-2 ring-offset-2 ring-popBlack' : 'shadow-brutal hover:-translate-y-1 hover:shadow-brutal-lg'}`}
       `}
-      style={isPromo ? { backgroundImage: 'linear-gradient(white, white), linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000)', backgroundClip: 'padding-box, border-box' } : {}}
     >
+      {/* PROMO ANIMATED BORDER */}
+      {isPromo && (
+          <div className="absolute inset-0 p-[2px] rounded-lg bg-[conic-gradient(from_0deg_at_50%_50%,#ff00ff_0deg,transparent_60deg,transparent_300deg,#00ffff_360deg)] animate-[spin_4s_linear_infinite] z-0">
+              <div className="absolute inset-[2px] bg-black rounded-md z-0" />
+          </div>
+      )}
+
       {/* Header / Rarity Strip */}
-      <div className={`h-6 md:h-8 ${headerColor} border-b-2 border-popBlack flex items-center justify-between px-2`}>
+      <div className={`h-6 md:h-8 ${headerColor} ${isPromo ? 'border-b border-white/20' : 'border-b-2 border-popBlack'} flex items-center justify-between px-2 relative z-10`}>
         <div className="flex gap-0.5">
           {Array.from({ length: item.rarity === Rarity.PROMO ? 1 : item.rarity }).map((_, i) => (
             <Star key={i} size={small ? 8 : 10} fill="currentColor" strokeWidth={1} />
           ))}
-          {isPromo && <span className="text-[10px] font-black italic">PROMO</span>}
+          {isPromo && <span className="text-[9px] font-black tracking-tighter bg-black text-popYellow px-1 rounded-sm border border-popYellow/50">PROMO</span>}
         </div>
         <div className="font-bold text-[8px] md:text-[10px] uppercase tracking-widest">{item.type.substring(0, 3)}</div>
       </div>
 
       {/* Image Container */}
-      <div className={`relative flex-1 overflow-hidden ${backgroundClass}`} style={containerStyle}>
-         {/* Background Fallback for Equipped items if no override provided */}
+      <div className={`relative flex-1 overflow-hidden ${backgroundClass} z-10 m-[1px]`} style={containerStyle}>
          {item.type === 'character' && item.equippedBackgroundId && !bgOverride && (
              <div className="absolute inset-0 bg-gray-100" /> 
          )}
@@ -180,29 +212,36 @@ const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, 
          
          {/* Level Badge */}
          {item.level && (
-             <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm font-mono border border-white/20">
+             <div className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded backdrop-blur-sm font-mono border border-white/20 z-20">
                  Lv.{item.level}
              </div>
          )}
          
          {/* Role Icon */}
          {item.type === 'character' && (
-             <div className="absolute top-1 left-1 bg-black/60 text-white p-1 rounded-full border border-white/20">
+             <div className="absolute top-1 left-1 bg-black/60 text-white p-1 rounded-full border border-white/20 z-20">
                  {getRoleIcon(item.role)}
+             </div>
+         )}
+
+         {/* EQUIPPED BY Badge (For Weapons/Chips) */}
+         {equippedBy && (
+             <div className="absolute top-1 right-1 z-30 bg-popYellow text-popBlack text-[8px] font-black px-1.5 py-0.5 rounded border border-popBlack shadow-sm max-w-[90%] truncate">
+                 ON {equippedBy.toUpperCase()}
              </div>
          )}
       </div>
 
       {/* Info Section */}
-      <div className="border-t-2 border-popBlack bg-white p-2 relative z-10">
+      <div className={`${isPromo ? 'bg-black border-t border-white/20 text-white m-[1px]' : 'border-t-2 border-popBlack bg-white'} p-2 relative z-10`}>
         <div className="flex justify-between items-start">
-            <h3 className={`font-black ${small ? 'text-[10px]' : 'text-sm md:text-lg'} leading-tight truncate w-full ${isPromo ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600' : ''}`}>
+            <h3 className={`font-black ${small ? 'text-[10px]' : 'text-sm md:text-lg'} leading-tight truncate w-full`}>
             {item.name}
             </h3>
         </div>
         
         {!small && (
-          <p className="text-xs text-gray-500 truncate font-medium mt-1 uppercase tracking-wide">
+          <p className={`${isPromo ? 'text-gray-400' : 'text-gray-500'} text-xs truncate font-medium mt-1 uppercase tracking-wide`}>
              {item.type === 'character' ? item.title : item.description}
           </p>
         )}
@@ -212,7 +251,7 @@ const Card: React.FC<CardProps> = ({ character: item, onClick, selected, small, 
 
       {/* New Badge */}
       {item.isNew && (
-        <div className="absolute top-8 right-2 bg-popRed text-white text-[9px] px-2 py-0.5 border border-popBlack shadow-brutal-sm font-bold rotate-12 z-20">
+        <div className="absolute top-8 right-2 bg-popRed text-white text-[9px] px-2 py-0.5 border border-popBlack shadow-brutal-sm font-bold rotate-12 z-30">
           NEW!
         </div>
       )}

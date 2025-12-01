@@ -403,6 +403,14 @@ const CharacterDetail: React.FC<ItemDetailProps> = ({ item, inventory, team, onE
                                             <StatRow icon={<Sword size={14} />} label="Attack" value={(item as Weapon).stats.atk} />
                                             <StatRow icon={<Crosshair size={14} />} label="Crit Rate" value={(item as Weapon).stats.critRate} suffix="%" />
                                             <StatRow icon={<Zap size={14} />} label="Armor Pen" value={(item as Weapon).stats.armorPen} suffix="%" />
+                                            {(item as Weapon).bonusStat && (
+                                                <div className="col-span-2 mt-2 pt-2 border-t border-gray-200">
+                                                    <div className="flex justify-between items-center text-popGreen font-bold text-sm">
+                                                        <span>BONUS: {(item as Weapon).bonusStat!.type.toUpperCase()}</span>
+                                                        <span>+{(item as Weapon).bonusStat!.value}</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </>
                                     ) : item.type === 'chip' ? (
                                          <StatRow icon={<Cpu size={14} />} label={(item as ModChip).mainStat.type} value={(item as ModChip).mainStat.value} />

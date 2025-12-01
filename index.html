@@ -40,6 +40,7 @@
               'grid-scroll': 'gridScroll 2s linear infinite',
               'particle-out': 'particleOut 0.6s ease-out forwards',
               'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'holo-sheen': 'holoSheen 4s ease-in-out infinite',
             },
             keyframes: {
               shake: {
@@ -76,6 +77,11 @@
               particleOut: {
                 '0%': { transform: 'translate(0, 0) scale(1)', opacity: '1' },
                 '100%': { transform: 'translate(var(--tx), var(--ty)) scale(0)', opacity: '0' },
+              },
+              holoSheen: {
+                '0%': { backgroundPosition: '0% 50%' },
+                '50%': { backgroundPosition: '100% 50%' },
+                '100%': { backgroundPosition: '0% 50%' },
               }
             }
           },

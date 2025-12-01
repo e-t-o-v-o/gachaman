@@ -1,3 +1,4 @@
+
 // ... existing imports ...
 import React, { useState, useEffect } from 'react';
 import { GameState, ViewState, Character, Rarity, ElementType, Quest, InventoryItem, ShopItem, CharacterStats, BattleRewards, Weapon, Cosmetic, ModChip } from './types';
@@ -57,7 +58,6 @@ const STARTER_CHAR: Character = {
   value: 0
 };
 
-// Bump version to force reset for new starter character
 const SAVE_KEY = 'aether_chronicles_save_v2';
 
 export default function App() {
@@ -195,7 +195,7 @@ export default function App() {
              updatedTarget.rank = newRank;
              
              if (target.type === 'character') {
-                 (updatedTarget as Character).stats = calculateBaseStats(target.rarity, target.level, newRank, (target as Character).role);
+                 updatedTarget.stats = calculateBaseStats(target.rarity, target.level, newRank, (target as Character).role);
              } else if (target.type === 'weapon') {
                  (updatedTarget as Weapon).stats = calculateWeaponStats(target as Weapon, target.level, newRank);
              }

@@ -40,6 +40,7 @@ export interface Weapon extends BaseItem {
     critRate: number; // Percentage
     armorPen: number; // Percentage
   };
+  bonusStat?: { type: keyof CharacterStats, value: number }; // New Sub-stat
   icon?: string;
 }
 
@@ -145,6 +146,7 @@ export interface GameState {
   rosterFilter?: ElementType | 'ALL';
   rosterSort?: 'LEVEL' | 'RARITY' | 'RANK';
   redeemedCodes?: string[];
+  bankStock: Record<string, boolean>; // Tracks if a bank pack (by ID/Index) is sold out
 }
 
 export enum ViewState {
@@ -157,6 +159,7 @@ export enum ViewState {
   QUESTS = 'QUESTS',
   SHOP = 'SHOP',
   PROFILE = 'PROFILE',
+  EVENT = 'EVENT',
 }
 
 // Battle Types
@@ -172,6 +175,8 @@ export interface BattleUnit extends Character {
   stability: number;
   maxStability: number;
   isStunned: boolean;
+  consecutiveStuns: number; // Track how many times they've been stunned in a row
+  isImmuneToBreak: boolean; // Grace period flag
 }
 
 export interface BattleEffect {
